@@ -56,16 +56,19 @@ Here is an example:
 ## Train
 Modify the parameters in ```train.py``` and run:
 ```
+cd EAST
 CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py
 ```
 ## Detect
 Modify the parameters in ```detect.py``` and run:
 ```
+cd EAST
 CUDA_VISIBLE_DEVICES=0 python detect.py
 ```
 ## Evaluation
 * The evaluation scripts are from [ICDAR Offline evaluation](http://rrc.cvc.uab.es/?ch=4&com=mymethods&task=1) and have been modified to run successfully with Python 3.7.1.
 * Modify the parameters in ```eval.py``` and run:
 ```
+cd EAST
 CUDA_VISIBLE_DEVICES=0 python eval.py
 ```
