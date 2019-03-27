@@ -134,7 +134,7 @@ class merge(nn.Module):
 		return y
 
 class output(nn.Module):
-	def __init__(self, scope = 512):
+	def __init__(self, scope=512):
 		super(output, self).__init__()
 		self.conv1 = nn.Conv2d(32, 1, 1)
 		self.sigmoid1 = nn.Sigmoid()
