@@ -29,6 +29,7 @@ When running the script, if some module is not installed you will see a notifica
 
 ```
 git clone https://github.com/SakuraRiven/EAST.git
+cd EAST
 ```
 
 ### 2. Data & Pre-Trained Model
@@ -56,19 +57,17 @@ Here is an example:
 ## Train
 Modify the parameters in ```train.py``` and run:
 ```
-cd EAST
 CUDA_VISIBLE_DEVICES=0,1,2,3 python train.py
 ```
 ## Detect
 Modify the parameters in ```detect.py``` and run:
 ```
-cd EAST
 CUDA_VISIBLE_DEVICES=0 python detect.py
 ```
 ## Evaluate
 * The evaluation scripts are from [ICDAR Offline evaluation](http://rrc.cvc.uab.es/?ch=4&com=mymethods&task=1) and have been modified to run successfully with Python 3.7.1.
+* Change the ```evaluate/gt.zip``` if you test on other datasets.
 * Modify the parameters in ```eval.py``` and run:
 ```
-cd EAST
 CUDA_VISIBLE_DEVICES=0 python eval.py
 ```
