@@ -3,12 +3,12 @@ This is a PyTorch Re-Implementation of [EAST: An Efficient and Accurate Scene Te
 
 * Only RBOX part is implemented.
 * Using dice loss instead of class-balanced cross-entropy loss. Some codes refer to [argman/EAST](https://github.com/argman/EAST) and [songdejia/EAST](https://github.com/songdejia/EAST)
-* The pre-trained model provided achieves __81.20__ F-score on ICDAR 2015 Challenge 4 using the 1000 images. see [here](http://rrc.cvc.uab.es/?ch=4&com=evaluation&view=method_info&task=1&m=51657) for the detailed results.
+* The pre-trained model provided achieves __81.44__ F-score on ICDAR 2015 Challenge 4 using the 1000 images. see [here](http://rrc.cvc.uab.es/?ch=4&com=evaluation&view=method_info&task=1&m=51881) for the detailed results.
 
 | Model | Recall | Precision | F-score | 
 | - | - | - | - |
 | Original | 72.75 | 80.46 | 76.41 |
-| Re-Implement | 75.78 | 87.44 | 81.20
+| Re-Implement | 75.83 | 87.94 | 81.44 |
 
 ## Prerequisites
 Only tested on
