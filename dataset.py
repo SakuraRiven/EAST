@@ -183,22 +183,16 @@ def is_cross_text(start_loc, length, vertices):
 	return False
 		
 
-def filter_vertices(vertices, length):
-	'''remove polys which exceed the length limitation'''
-	index1 = np.sum(vertices >= 0, 1) == 8
-	index2 = np.sum(vertices < length, 1) == 8
-	return vertices[index1 & index2, :]
-
-
-def crop_img(img, vertices, length):
+def crop_img(img, vertices, labels, length):
 	'''crop img patches to obtain batch and augment
 	Input:
-		img           : PIL Image
-		vertices      : vertices of text regions <numpy.ndarray, (n,8)>
-		length        : length of cropped image region
+		img         : PIL Image
+		vertices    : vertices of text regions <numpy.ndarray, (n,8)>
+		labels      : 1->valid, 0->ignore, <numpy.ndarray, (n,)>
+		length      : length of cropped image region
 	Output:
-		region        : cropped image region
-		final_vertices: new vertices in cropped region
+		region      : cropped image region
+		new_vertices: new vertices in cropped region
 	'''
 	h, w = img.height, img.width
 	# confirm the shortest side of image >= length
@@ -206,7 +200,7 @@ def crop_img(img, vertices, length):
 		img = img.resize((length, int(h * length / w)), Image.BILINEAR)
 	elif h < w and h < length:
 		img = img.resize((int(w * length / h), length), Image.BILINEAR)
-	ratio_w = img.width / w 
+	ratio_w = img.width / w
 	ratio_h = img.height / h
 	assert(ratio_w >= 1 and ratio_h >= 1)
 
@@ -224,16 +218,15 @@ def crop_img(img, vertices, length):
 		cnt += 1
 		start_w = int(np.random.rand() * remain_w)
 		start_h = int(np.random.rand() * remain_h)
-		flag = is_cross_text([start_w, start_h], length, new_vertices)
+		flag = is_cross_text([start_w, start_h], length, new_vertices[labels==1,:])
 	box = (start_w, start_h, start_w + length, start_h + length)
 	region = img.crop(box)
 	if new_vertices.size == 0:
-		return region, new_vertices
+		return region, new_vertices	
 	
 	new_vertices[:,[0,2,4,6]] -= start_w
 	new_vertices[:,[1,3,5,7]] -= start_h
-	final_vertices = filter_vertices(new_vertices, length)
-	return region, final_vertices
+	return region, new_vertices
 
 
 def rotate_all_pixels(rotate_mat, anchor_x, anchor_y, length):
@@ -301,25 +294,32 @@ def rotate_img(img, vertices, angle_range=10):
 	return img, new_vertices
 
 
-def get_score_geo(img, vertices, scale, length):
+def get_score_geo(img, vertices, labels, scale, length):
 	'''generate score gt and geometry gt
 	Input:
 		img     : PIL Image
 		vertices: vertices of text regions <numpy.ndarray, (n,8)>
+		labels  : 1->valid, 0->ignore, <numpy.ndarray, (n,)>
 		scale   : feature map / image
 		length  : image length
 	Output:
-		score gt, geo gt
+		score gt, geo gt, ignored
 	'''
-	score_map = np.zeros((int(img.height * scale), int(img.width * scale), 1), np.float32)
-	geo_map   = np.zeros((int(img.height * scale), int(img.width * scale), 5), np.float32)
-	polys = []
-		
+	score_map   = np.zeros((int(img.height * scale), int(img.width * scale), 1), np.float32)
+	geo_map     = np.zeros((int(img.height * scale), int(img.width * scale), 5), np.float32)
+	ignored_map = np.zeros((int(img.height * scale), int(img.width * scale), 1), np.float32)
+	
 	index = np.arange(0, length, int(1/scale))
 	index_x, index_y = np.meshgrid(index, index)
+	ignored_polys = []
+	polys = []
 	
-	for vertice in vertices:
-		poly = np.around(scale * np.array(shrink_poly(vertice)).reshape((4,2))).astype(np.int32) # scaled & shrinked
+	for i, vertice in enumerate(vertices):
+		if labels[i] == 0:
+			ignored_polys.append(np.around(scale * vertice.reshape((4,2))).astype(np.int32))
+			continue		
+		
+		poly = np.around(scale * shrink_poly(vertice).reshape((4,2))).astype(np.int32) # scaled & shrinked
 		polys.append(poly)
 		temp_mask = np.zeros(score_map.shape[:-1], np.float32)
 		cv2.fillPoly(temp_mask, [poly], 1)
@@ -345,8 +345,26 @@ def get_score_geo(img, vertices, scale, length):
 		geo_map[:,:,3] += d4[index_y, index_x] * temp_mask
 		geo_map[:,:,4] += theta * temp_mask
 	
+	cv2.fillPoly(ignored_map, ignored_polys, 1)
 	cv2.fillPoly(score_map, polys, 1)
-	return torch.Tensor(score_map).permute(2,0,1), torch.Tensor(geo_map).permute(2,0,1)
+	return torch.Tensor(score_map).permute(2,0,1), torch.Tensor(geo_map).permute(2,0,1), torch.Tensor(ignored_map).permute(2,0,1)
+
+
+def extract_vertices(lines):
+	'''extract vertices info from txt lines
+	Input:
+		lines   : list of string info
+	Output:
+		vertices: vertices of text regions <numpy.ndarray, (n,8)>
+		labels  : 1->valid, 0->ignore, <numpy.ndarray, (n,)>
+	'''
+	labels = []
+	vertices = []
+	for line in lines:
+		vertices.append(list(map(int,line.rstrip('\n').lstrip('\ufeff').split(',')[:8])))
+		label = 0 if '###' in line else 1
+		labels.append(label)
+	return np.array(vertices), np.array(labels)
 
 	
 class custom_dataset(data.Dataset):
@@ -361,20 +379,18 @@ class custom_dataset(data.Dataset):
 		return len(self.img_files)
 
 	def __getitem__(self, index):
-		# vertices : np.array[[x1,y1,x2,y2,x3,y3,x4,y4], []...]
 		with open(self.gt_files[index], 'r') as f:
 			lines = f.readlines()
-		vertices = np.array([list(map(int,line.rstrip('\n').lstrip('\ufeff').split(',')[:8])) \
-                                      for line in lines if not '###' in line])
+		vertices, labels = extract_vertices(lines)
 		
 		img = Image.open(self.img_files[index])
 		img, vertices = adjust_height(img, vertices) 
 		img, vertices = rotate_img(img, vertices)
-		img, vertices = crop_img(img, vertices, self.length) 
+		img, vertices = crop_img(img, vertices, labels, self.length) 
 		transform = transforms.Compose([transforms.ColorJitter(0.5, 0.5, 0.5, 0.25), \
                                         transforms.ToTensor(), \
                                         transforms.Normalize(mean=(0.5,0.5,0.5),std=(0.5,0.5,0.5))])
 		
-		score_map, geo_map = get_score_geo(img, vertices, self.scale, self.length)
-		return transform(img), score_map, geo_map
+		score_map, geo_map, ignored_map = get_score_geo(img, vertices, labels, self.scale, self.length)
+		return transform(img), score_map, geo_map, ignored_map
 
