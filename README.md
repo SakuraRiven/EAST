@@ -3,12 +3,12 @@ This is a PyTorch Re-Implementation of [EAST: An Efficient and Accurate Scene Te
 
 * Only RBOX part is implemented.
 * Using dice loss instead of class-balanced cross-entropy loss. Some codes refer to [argman/EAST](https://github.com/argman/EAST) and [songdejia/EAST](https://github.com/songdejia/EAST)
-* The pre-trained model provided achieves __81.44__ F-score on ICDAR 2015 Challenge 4 using only the 1000 images. see [here](http://rrc.cvc.uab.es/?ch=4&com=evaluation&view=method_info&task=1&m=51881) for the detailed results.
+* The pre-trained model provided achieves __82.79__ F-score on ICDAR 2015 Challenge 4 using only the 1000 images. see [here](http://rrc.cvc.uab.es/?ch=4&com=evaluation&view=method_info&task=1&m=52405) for the detailed results.
 
 | Model | Loss | Recall | Precision | F-score | 
 | - | - | - | - | - |
 | Original | CE | 72.75 | 80.46 | 76.41 |
-| Re-Implement | Dice | 75.83 | 87.94 | 81.44 |
+| Re-Implement | Dice | 81.27 | 84.36 | 82.79 |
 
 ## Prerequisites
 Only tested on
@@ -35,7 +35,7 @@ cd EAST
 ### 2. Data & Pre-Trained Model
 * Download Train and Test Data: [ICDAR 2015 Challenge 4](http://rrc.cvc.uab.es/?ch=4&com=downloads). Cut the data into four parts: train_img, train_gt, test_img, test_gt.
 
-* Download Pre-Trained VGG16 by PyTorch: [VGG16](https://drive.google.com/open?id=1HgDuFGd2q77Z6DcUlDEfBZgxeJv4tald) and Trained EAST Model: [EAST](https://drive.google.com/open?id=1366d-wYi6r1QgoDYRM-3bgx4qP-IY-7Z). Make a new folder ```pths``` and put the download pths into ```pths```
+* Download pre-trained VGG16 from PyTorch: [VGG16](https://drive.google.com/open?id=1HgDuFGd2q77Z6DcUlDEfBZgxeJv4tald) and our trained EAST model: [EAST](https://drive.google.com/open?id=1AFABkJgr5VtxWnmBU3XcfLJvpZkC2TAg). Make a new folder ```pths``` and put the download pths into ```pths```
   
 ```
 mkdir pths
