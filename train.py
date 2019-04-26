@@ -19,8 +19,10 @@ def train(train_img_path, train_gt_path, pths_path, batch_size, lr, num_workers,
 	criterion = Loss()
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 	model = EAST()
+	data_parallel = False
 	if torch.cuda.device_count() > 1:
 		model = nn.DataParallel(model)
+		data_parallel = True
 	model.to(device)
 	optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 	scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[epoch_iter//3,epoch_iter*2//3], gamma=0.1)
@@ -48,7 +50,8 @@ def train(train_img_path, train_gt_path, pths_path, batch_size, lr, num_workers,
 		print(time.asctime(time.localtime(time.time())))
 		print('='*50)
 		if (epoch + 1) % interval == 0:
-			torch.save(model.module.state_dict(), os.path.join(pths_path, 'model_epoch_{}.pth'.format(epoch+1)))
+			state_dict = model.module.state_dict() if data_parallel else model.state_dict()
+			torch.save(state_dict, os.path.join(pths_path, 'model_epoch_{}.pth'.format(epoch+1)))
 
 
 if __name__ == '__main__':
