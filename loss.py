@@ -28,6 +28,9 @@ class Loss(nn.Module):
 		self.weight_angle = weight_angle
 
 	def forward(self, gt_score, pred_score, gt_geo, pred_geo, ignored_map):
+		if torch.sum(gt_score) < 1:
+			return torch.sum(pred_score + pred_geo) * 0
+		
 		classify_loss = get_dice_loss(gt_score, pred_score*(1-ignored_map))
 		iou_loss_map, angle_loss_map = get_geo_loss(gt_geo, pred_geo)
 
