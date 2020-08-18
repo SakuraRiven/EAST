@@ -24,6 +24,8 @@ When running the script, if some module is not installed you will see a notifica
     conda install -c omgarcia gcc-6
     conda install -c conda-forge binutils
 
+The original lanms code has a bug in ```normalize_poly``` that the ref vertices are not fixed when looping the p's ordering to calculate the minimum distance. We fixed this bug in [LANMS](https://github.com/SakuraRiven/LANMS) so that anyone could compile the correct lanms.
+
 ## Installation
 ### 1. Clone the repo
 
