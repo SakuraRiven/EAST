@@ -196,9 +196,9 @@ def crop_img(img, vertices, labels, length):
 	'''
 	h, w = img.height, img.width
 	# confirm the shortest side of image >= length
-	if h >= w and w < length:
+	if h >= w:
 		img = img.resize((length, int(h * length / w)), Image.BILINEAR)
-	elif h < w and h < length:
+	else:
 		img = img.resize((int(w * length / h), length), Image.BILINEAR)
 	ratio_w = img.width / w
 	ratio_h = img.height / h
